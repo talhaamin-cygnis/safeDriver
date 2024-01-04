@@ -62,6 +62,7 @@ const ContactUs = () => {
           "We have received your message, and the administrator will be in touch with you soon.",
           ToastAndroid.SHORT
         );
+        navigation.goBack();
       } else {
         ToastAndroid.show(
           "Something went wrong while submitting your request",

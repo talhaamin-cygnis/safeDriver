@@ -42,6 +42,7 @@ const DrowsinessDetection = () => {
   const currentRide = useRef("");
   const [sound, setSound] = React.useState();
   const lastOccuredIncident = useRef();
+  const [isDetectingDrowsiness, setIsDetectingDrowsiness] = useState(false);
 
   const startPrediction = async (model, tensor) => {
     try {
@@ -177,6 +178,7 @@ const DrowsinessDetection = () => {
   const startRide = async () => {
     if (shouldStartRide) {
       sound.setStatusAsync({ shouldPlay: false });
+      setIsDetectingDrowsiness(false);
       endRide(currentRide.current);
     } else {
       let user = await getUserData();
@@ -204,10 +206,11 @@ const DrowsinessDetection = () => {
         userFace.faces?.[0]?.yawAngle < 0
       ) {
         sound?.setStatusAsync({ shouldPlay: true });
+        setIsDetectingDrowsiness(true);
         let now = moment(new Date());
         let last = moment(lastOccuredIncident.current);
         let diff = now.diff(last, "seconds");
-        if (diff >= 10) {
+        if (diff >= 5) {
           let drowsiness = {
             id: "0",
             latitude: location?.coords?.latitude ?? 0.0,
@@ -218,18 +221,21 @@ const DrowsinessDetection = () => {
           userIncidents.push(drowsiness);
           setUserIncidents(userIncidents);
           onDrowsinessDetected(userIncidents, currentRide.current);
-          lastOccuredIncident.current = moment(new Date());
         }
+        lastOccuredIncident.current = moment(new Date());
         shouldCheckForDrowsiness.current = true;
       } else {
         sound?.setStatusAsync({ shouldPlay: false });
+        setIsDetectingDrowsiness(false);
         shouldCheckForDrowsiness.current = true;
       }
     } else {
       if (shouldStartRide) {
         sound?.setStatusAsync({ shouldPlay: true });
+        setIsDetectingDrowsiness(true);
       } else {
         sound?.setStatusAsync({ shouldPlay: false });
+        setIsDetectingDrowsiness(false);
         lastOccuredIncident.current = undefined;
       }
     }
@@ -287,6 +293,9 @@ const DrowsinessDetection = () => {
                     width: user?.bounds.size.width,
                     top: user?.bounds.origin.y,
                     left: user?.bounds.origin.x,
+                    borderColor: isDetectingDrowsiness
+                      ? COLORS.red
+                      : COLORS.green1,
                   },
                 ]}
               />
@@ -318,7 +327,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   face: {
-    borderColor: COLORS.red,
     borderWidth: 1,
     position: "absolute",
     borderRadius: 6,
